@@ -144,9 +144,9 @@ function renderExamCards(exams) {
             <span class="audience-label">Audience:</span>
             <span class="audience-value">${e.targetAudience}</span>
           </div>
-          <p class="exam-description">\${
+          <p class="exam-description">${
             e.description.length > 100
-              ? e.description.slice(0, 100) + '...'
+              ? e.description.slice(0, 100) + "..."
               : e.description
           }</p>
           <div class="exam-meta">

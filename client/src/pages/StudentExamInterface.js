@@ -460,7 +460,7 @@ function finishExam(exam, examState) {
 
   // Submit the exam attempt to the server
   submitExamAttempt({
-    examId: examState.examId,
+    examId: exam.id,
     startTime: examState.startTime,
     endTime: examState.endTime,
     coordinates: examState.coordinates,

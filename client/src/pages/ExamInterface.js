@@ -156,81 +156,6 @@ function renderExamDetails(app, exam) {
           ${renderQuestionsList(exam.questions)}
         </div>
       </main>
-      
-      <div id="question-modal" class="modal hidden">
-        <div class="modal-content">
-          <span class="close-btn">&times;</span>
-          <h2 id="modal-title">Add New Question</h2>
-          <form id="question-form">
-            <div class="form-group">
-              <label for="question-type">Question Type</label>
-              <select id="question-type" required>
-                <option value="">Select type</option>
-                <option value="direct">Direct Question</option>
-                <option value="mcq">Multiple Choice (MCQ)</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="question-text">Question Text</label>
-              <textarea id="question-text" required></textarea>
-            </div>
-            
-            <div class="form-group">
-              <label for="question-attachment">Attachment (Optional)</label>
-              <input type="file" id="question-attachment" accept="image/*,audio/*,video/*">
-              <div id="attachment-preview" class="attachment-preview hidden"></div>
-            </div>
-            
-            <div id="direct-question-fields" class="question-type-fields hidden">
-              <div class="form-group">
-                <label for="correct-answer">Correct Answer</label>
-                <input type="text" id="correct-answer">
-              </div>
-              <div class="form-group">
-                <label for="tolerance">Tolerance Percentage (0-100)</label>
-                <input type="number" id="tolerance" min="0" max="100" value="10">
-              </div>
-            </div>
-            
-            <div id="mcq-fields" class="question-type-fields hidden">
-              <div class="form-group">
-                <label>Options (Add at least 2)</label>
-                <div id="options-container">
-                  <div class="option-item">
-                    <input type="text" class="option-input" placeholder="Option text">
-                    <input type="checkbox" class="correct-option">
-                    <span>Correct</span>
-                  </div>
-                  <div class="option-item">
-                    <input type="text" class="option-input" placeholder="Option text">
-                    <input type="checkbox" class="correct-option">
-                    <span>Correct</span>
-                  </div>
-                </div>
-                <button type="button" id="add-option-btn" class="secondary-btn">Add Option</button>
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="question-points">Points</label>
-              <input type="number" id="question-points" min="1" value="1" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="time-limit">Time Limit (seconds)</label>
-              <input type="number" id="time-limit" min="15" value="60" required>
-            </div>
-            
-            <input type="hidden" id="question-id" value="">
-            <input type="hidden" id="exam-id" value="${examId}">
-            <div class="form-actions">
-              <button type="button" id="cancel-btn" class="secondary-btn">Cancel</button>
-              <button type="submit" class="primary-btn">Save Question</button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
   `;
 
@@ -451,149 +376,15 @@ function setupEventListeners(exam) {
   }
 
   // Add question button
-  document.getElementById("add-question-btn").addEventListener("click", () => {
-    openQuestionModal();
-  });
-
-  // Question type change
-  document.getElementById("question-type").addEventListener("change", (e) => {
-    document.getElementById("direct-question-fields").classList.add("hidden");
-    document.getElementById("mcq-fields").classList.add("hidden");
-
-    if (e.target.value === "direct") {
-      document
-        .getElementById("direct-question-fields")
-        .classList.remove("hidden");
-      // Make correct answer required for direct questions
-      document
-        .getElementById("correct-answer")
-        .setAttribute("required", "true");
-    } else if (e.target.value === "mcq") {
-      document.getElementById("mcq-fields").classList.remove("hidden");
-      // Remove required from correct answer for MCQ
-      document.getElementById("correct-answer").removeAttribute("required");
-    }
-  });
-
-  // Add option button
-  document.getElementById("add-option-btn").addEventListener("click", () => {
-    const optionsContainer = document.getElementById("options-container");
-    const newOption = document.createElement("div");
-    newOption.className = "option-item";
-    newOption.innerHTML = `
-      <input type="text" class="option-input" placeholder="Option text">
-      <input type="checkbox" class="correct-option">
-      <span>Correct</span>
-      <button type="button" class="remove-option-btn">&times;</button>
-    `;
-    optionsContainer.appendChild(newOption);
-
-    newOption
-      .querySelector(".remove-option-btn")
-      .addEventListener("click", () => {
-        optionsContainer.removeChild(newOption);
-      });
-  });
-
-  // File attachment preview
-  document
-    .getElementById("question-attachment")
-    .addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const preview = document.getElementById("attachment-preview");
-      preview.innerHTML = `<div class="loading-attachment">Uploading attachment...</div>`;
-      preview.classList.remove("hidden");
-
-      try {
-        const response = await uploadQuestionAttachment(file);
-        const attachment = response.attachment;
-
-        preview.innerHTML = `
-          <div class="attachment-info">
-            <span class="attachment-name">${file.name}</span>
-            <span class="attachment-type">(${attachment.type})</span>
-            <button type="button" class="remove-attachment-btn">&times;</button>
-          </div>
-          <input type="hidden" id="attachment-data" value='${JSON.stringify(
-            attachment
-          )}'>
-        `;
-
-        preview
-          .querySelector(".remove-attachment-btn")
-          .addEventListener("click", () => {
-            preview.innerHTML = "";
-            preview.classList.add("hidden");
-            document.getElementById("question-attachment").value = "";
-          });
-      } catch (error) {
-        console.error("Error uploading attachment:", error);
-        preview.innerHTML = `
-          <div class="attachment-error">
-            Failed to upload attachment: ${error.message}
-            <button type="button" class="retry-attachment-btn">Retry</button>
-          </div>
-        `;
-
-        preview
-          .querySelector(".retry-attachment-btn")
-          .addEventListener("click", () => {
-            document.getElementById("question-attachment").click();
-          });
-      }
+  const addQuestionBtn = document.getElementById("add-question-btn");
+  if (addQuestionBtn) {
+    addQuestionBtn.addEventListener("click", () => {
+      console.log("Add question button clicked");
+      openQuestionDialog(null, examId);
     });
-
-  // Question form submission
-  document
-    .getElementById("question-form")
-    .addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const submitBtn = form.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Saving...";
-
-      try {
-        // Get the examId from the hidden input field
-        const examId = form.querySelector("#exam-id").value;
-
-        if (!examId) {
-          throw new Error("Exam ID not found");
-        }
-
-        const questionData = getQuestionFormData(examId);
-        let result;
-
-        if (form.querySelector("#question-id").value) {
-          // Update existing question
-          const questionId = form.querySelector("#question-id").value;
-          result = await updateQuestion(questionId, questionData);
-          showNotification("Question updated successfully", "success");
-        } else {
-          // Create new question
-          result = await createQuestion(questionData);
-          showNotification("Question created successfully", "success");
-        }
-
-        // Close the modal
-        closeQuestionModal();
-
-        // Refresh the exam view with the latest questions
-        await renderExamEditor(examId);
-      } catch (error) {
-        console.error("Error saving question:", error);
-        showNotification(`Failed to save question: ${error.message}`, "error");
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Save Question";
-      }
-    });
-
-  // Cancel button
-  document.getElementById("cancel-btn").addEventListener("click", () => {
-    closeQuestionModal();
-  });
+  } else {
+    console.error("Add question button not found");
+  }
 
   // Edit question buttons
   document.querySelectorAll(".edit-btn").forEach((btn) => {
@@ -605,7 +396,7 @@ function setupEventListeners(exam) {
         const question = response.question || response;
 
         if (question) {
-          openQuestionModal(question);
+          openQuestionDialog(question, examId);
         } else {
           throw new Error("Question data not found");
         }
@@ -668,16 +459,16 @@ function setupEventListeners(exam) {
   });
 
   // Modal close button
-  document.querySelector(".close-btn").addEventListener("click", () => {
-    closeQuestionModal();
-  });
+  // document.querySelector(".close-btn").addEventListener("click", () => {
+  //   closeQuestionDialog()
+  // })
 
   // Close modal when clicking outside
-  document.getElementById("question-modal").addEventListener("click", (e) => {
-    if (e.target === document.getElementById("question-modal")) {
-      closeQuestionModal();
-    }
-  });
+  // document.getElementById("question-dialog").addEventListener("click", (e) => {
+  //   if (e.target === document.getElementById("question-dialog")) {
+  //     closeQuestionDialog()
+  //   }
+  // })
 }
 
 /**
@@ -719,7 +510,7 @@ function showDeleteExamDialog(examId) {
         <div class="loading-spinner"></div>
         <p>Deleting exam...</p>
       `;
-        document.body.appendChild(loadingOverlay);
+        // document.body.appendChild(loadingOverlay);
 
         // Delete the exam
         await deleteExam(examId);
@@ -789,7 +580,7 @@ function showPublishExamDialog(examId, exam) {
     .querySelector(".confirm-publish")
     .addEventListener("click", async () => {
       const durationInput = document.getElementById("exam-duration");
-      const durationMinutes = parseInt(durationInput.value);
+      const durationMinutes = Number.parseInt(durationInput.value);
 
       if (!durationMinutes || durationMinutes < 5) {
         durationInput.setCustomValidity(
@@ -842,167 +633,378 @@ function showPublishExamDialog(examId, exam) {
 }
 
 /**
- * Opens the question modal for adding or editing a question
+ * Opens the question dialog for adding or editing a question
  * @param {Object} question - The question object to edit (null for new question)
+ * @param {string} examId - The ID of the exam
  */
-function openQuestionModal(question = null) {
-  const modal = document.getElementById("question-modal");
-  const form = document.getElementById("question-form");
+function openQuestionDialog(question = null, examId) {
+  console.log("Opening question dialog with dynamic creation");
 
-  // Reset form
-  form.reset();
-  form.querySelector("#question-id").value = "";
-  document.getElementById("attachment-preview").innerHTML = "";
-  document.getElementById("attachment-preview").classList.add("hidden");
-  document.getElementById("question-attachment").value = "";
+  // Create the dialog overlay
+  const dialogOverlay = document.createElement("div");
+  dialogOverlay.className = "confirm-dialog-overlay question-dialog-overlay";
 
-  // Clear all but first two MCQ options
-  const optionsContainer = document.getElementById("options-container");
-  while (optionsContainer.children.length > 2) {
-    optionsContainer.removeChild(optionsContainer.lastChild);
-  }
+  // Determine if we're adding or editing
+  const isEditing = question !== null;
+  const dialogTitle = isEditing ? "Edit Question" : "Add New Question";
 
-  // Reset option inputs
-  document.querySelectorAll(".option-input").forEach((input) => {
-    input.value = "";
-    input.nextElementSibling.checked = false;
+  // Create the dialog content
+  dialogOverlay.innerHTML = `
+    <div class="confirm-dialog question-dialog">
+      <div class="dialog-header">
+        <h3>${dialogTitle}</h3>
+        <button class="close-dialog-btn">&times;</button>
+      </div>
+      
+      <form id="question-form" class="question-form">
+        <div class="form-group">
+          <label for="question-type">Question Type</label>
+          <select id="question-type" required>
+            <option value="">Select type</option>
+            <option value="direct" ${
+              isEditing && question.type === "direct" ? "selected" : ""
+            }>Direct Question</option>
+            <option value="mcq" ${
+              isEditing && question.type === "mcq" ? "selected" : ""
+            }>Multiple Choice (MCQ)</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="question-text">Question Text</label>
+          <textarea id="question-text" required>${
+            isEditing ? question.text : ""
+          }</textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="question-attachment">Attachment (Optional)</label>
+          <input type="file" id="question-attachment" accept="image/*,audio/*,video/*">
+          <div id="attachment-preview" class="attachment-preview ${
+            isEditing && question.attachment ? "" : "hidden"
+          }">
+            ${
+              isEditing && question.attachment
+                ? `
+                <div class="attachment-info">
+                  <span class="attachment-name">${
+                    question.attachment.filename || "Attachment"
+                  }</span>
+                  <span class="attachment-type">(${
+                    question.attachment.type
+                  })</span>
+                  <button type="button" class="remove-attachment-btn">&times;</button>
+                </div>
+                <input type="hidden" id="attachment-data" value='${JSON.stringify(
+                  question.attachment
+                )}'>
+              `
+                : ""
+            }
+          </div>
+        </div>
+        
+        <div id="direct-question-fields" class="question-type-fields ${
+          isEditing && question.type === "direct" ? "" : "hidden"
+        }">
+          <div class="form-group">
+            <label for="correct-answer">Correct Answer</label>
+            <input type="text" id="correct-answer" ${
+              isEditing && question.type === "direct"
+                ? 'value="' + (question.correctAnswer || "") + '"'
+                : ""
+            }>
+          </div>
+          <div class="form-group">
+            <label for="tolerance">Tolerance Percentage (0-100)</label>
+            <input type="number" id="tolerance" min="0" max="100" value="${
+              isEditing && question.type === "direct"
+                ? question.tolerance || 10
+                : 10
+            }">
+          </div>
+        </div>
+        
+        <div id="mcq-fields" class="question-type-fields ${
+          isEditing && question.type === "mcq" ? "" : "hidden"
+        }">
+          <div class="form-group">
+            <label>Options (Add at least 2)</label>
+            <div id="options-container">
+              ${
+                isEditing &&
+                question.type === "mcq" &&
+                Array.isArray(question.options)
+                  ? question.options
+                      .map(
+                        (option, index) => `
+                      <div class="option-item">
+                        <input type="text" class="option-input" value="${option.replace(
+                          /"/g,
+                          "&quot;"
+                        )}">
+                        <input type="checkbox" class="correct-option" ${
+                          Array.isArray(question.correctOptions) &&
+                          question.correctOptions.includes(index)
+                            ? "checked"
+                            : ""
+                        }>
+                        <span>Correct</span>
+                        <button type="button" class="remove-option-btn">&times;</button>
+                      </div>
+                    `
+                      )
+                      .join("")
+                  : `
+                    <div class="option-item">
+                      <input type="text" class="option-input" placeholder="Option text">
+                      <input type="checkbox" class="correct-option">
+                      <span>Correct</span>
+                    </div>
+                    <div class="option-item">
+                      <input type="text" class="option-input" placeholder="Option text">
+                      <input type="checkbox" class="correct-option">
+                      <span>Correct</span>
+                    </div>
+                  `
+              }
+            </div>
+            <button type="button" id="add-option-btn" class="secondary-btn">Add Option</button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="question-points">Points</label>
+          <input type="number" id="question-points" min="1" value="${
+            isEditing ? question.points || 1 : 1
+          }" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="time-limit">Time Limit (seconds)</label>
+          <input type="number" id="time-limit" min="15" value="${
+            isEditing ? question.timeLimit || 60 : 60
+          }" required>
+        </div>
+        
+        <input type="hidden" id="question-id" value="${
+          isEditing ? question._id : ""
+        }">
+        <input type="hidden" id="exam-id" value="${examId}">
+        
+        <div class="form-actions">
+          <button type="button" id="cancel-btn" class="secondary-btn">Cancel</button>
+          <button type="submit" class="primary-btn">Save Question</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  // Add the dialog to the DOM
+  document.body.appendChild(dialogOverlay);
+
+  // Set up event listeners
+
+  // Close button
+  dialogOverlay
+    .querySelector(".close-dialog-btn")
+    .addEventListener("click", () => {
+      document.body.removeChild(dialogOverlay);
+    });
+
+  // Cancel button
+  dialogOverlay.querySelector("#cancel-btn").addEventListener("click", () => {
+    document.body.removeChild(dialogOverlay);
   });
 
-  // Hide type-specific fields
-  document.getElementById("direct-question-fields").classList.add("hidden");
-  document.getElementById("mcq-fields").classList.add("hidden");
-
-  // Set title
-  document.getElementById("modal-title").textContent = question
-    ? "Edit Question"
-    : "Add New Question";
-
-  // Populate form if editing
-  if (question) {
-    form.querySelector("#question-id").value = question._id;
-    form.querySelector("#question-type").value = question.type;
-    form.querySelector("#question-text").value = question.text;
-    form.querySelector("#question-points").value = question.points || 1;
-    form.querySelector("#time-limit").value = question.timeLimit || 60;
-
-    // Show appropriate fields based on type
-    if (question.type === "direct") {
-      form.querySelector("#correct-answer").value =
-        question.correctAnswer || "";
-      form.querySelector("#tolerance").value = question.tolerance || 10;
-      document
-        .getElementById("direct-question-fields")
-        .classList.remove("hidden");
-      document
-        .getElementById("correct-answer")
-        .setAttribute("required", "true");
-    } else if (question.type === "mcq") {
-      // Clear existing options
-      while (optionsContainer.firstChild) {
-        optionsContainer.removeChild(optionsContainer.firstChild);
-      }
-
-      // Add options from question
-      if (Array.isArray(question.options)) {
-        question.options.forEach((option, index) => {
-          const optionItem = document.createElement("div");
-          optionItem.className = "option-item";
-
-          // Escape the option text to prevent HTML injection
-          const escapedOption = option
-            .replace(/"/g, "&quot;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
-
-          optionItem.innerHTML = `
-            <input type="text" class="option-input" value="${escapedOption}">
-            <input type="checkbox" class="correct-option" 
-                  ${
-                    Array.isArray(question.correctOptions) &&
-                    question.correctOptions.includes(index)
-                      ? "checked"
-                      : ""
-                  }>
-            <span>Correct</span>
-            <button type="button" class="remove-option-btn">&times;</button>
-          `;
-          optionsContainer.appendChild(optionItem);
-
-          optionItem
-            .querySelector(".remove-option-btn")
-            .addEventListener("click", () => {
-              optionsContainer.removeChild(optionItem);
-            });
-        });
-      } else {
-        // Add two default empty options if no options exist
-        for (let i = 0; i < 2; i++) {
-          const optionItem = document.createElement("div");
-          optionItem.className = "option-item";
-          optionItem.innerHTML = `
-            <input type="text" class="option-input" placeholder="Option text">
-            <input type="checkbox" class="correct-option">
-            <span>Correct</span>
-            <button type="button" class="remove-option-btn">&times;</button>
-          `;
-          optionsContainer.appendChild(optionItem);
-
-          optionItem
-            .querySelector(".remove-option-btn")
-            .addEventListener("click", () => {
-              optionsContainer.removeChild(optionItem);
-            });
-        }
-      }
-
-      document.getElementById("mcq-fields").classList.remove("hidden");
+  // Click outside to close
+  dialogOverlay.addEventListener("click", (e) => {
+    if (e.target === dialogOverlay) {
+      document.body.removeChild(dialogOverlay);
     }
+  });
 
-    // Show attachment if exists
-    if (question.attachment) {
-      const preview = document.getElementById("attachment-preview");
-      preview.innerHTML = `
+  // Question type change
+  dialogOverlay
+    .querySelector("#question-type")
+    .addEventListener("change", (e) => {
+      const directFields = dialogOverlay.querySelector(
+        "#direct-question-fields"
+      );
+      const mcqFields = dialogOverlay.querySelector("#mcq-fields");
+
+      directFields.classList.add("hidden");
+      mcqFields.classList.add("hidden");
+
+      if (e.target.value === "direct") {
+        directFields.classList.remove("hidden");
+        // Make correct answer required for direct questions
+        dialogOverlay
+          .querySelector("#correct-answer")
+          .setAttribute("required", "true");
+      } else if (e.target.value === "mcq") {
+        mcqFields.classList.remove("hidden");
+        // Remove required from correct answer for MCQ
+        dialogOverlay
+          .querySelector("#correct-answer")
+          .removeAttribute("required");
+      }
+    });
+
+  // Add option button
+  dialogOverlay
+    .querySelector("#add-option-btn")
+    .addEventListener("click", () => {
+      const optionsContainer =
+        dialogOverlay.querySelector("#options-container");
+      const newOption = document.createElement("div");
+      newOption.className = "option-item";
+      newOption.innerHTML = `
+      <input type="text" class="option-input" placeholder="Option text">
+      <input type="checkbox" class="correct-option">
+      <span>Correct</span>
+      <button type="button" class="remove-option-btn">&times;</button>
+    `;
+      optionsContainer.appendChild(newOption);
+
+      newOption
+        .querySelector(".remove-option-btn")
+        .addEventListener("click", () => {
+          optionsContainer.removeChild(newOption);
+        });
+    });
+
+  // Set up remove option buttons for existing options
+  dialogOverlay.querySelectorAll(".remove-option-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const optionItem = btn.closest(".option-item");
+      const optionsContainer = optionItem.parentElement;
+      if (optionsContainer.children.length > 2) {
+        optionsContainer.removeChild(optionItem);
+      } else {
+        showNotification("MCQ questions must have at least 2 options", "error");
+      }
+    });
+  });
+
+  // File attachment preview
+  dialogOverlay
+    .querySelector("#question-attachment")
+    .addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const preview = dialogOverlay.querySelector("#attachment-preview");
+      preview.innerHTML = `<div class="loading-attachment">Uploading attachment...</div>`;
+      preview.classList.remove("hidden");
+
+      try {
+        const response = await uploadQuestionAttachment(file);
+        const attachment = response.attachment;
+
+        preview.innerHTML = `
         <div class="attachment-info">
-          <span class="attachment-name">${
-            question.attachment.filename || "Attachment"
-          }</span>
-          <span class="attachment-type">(${question.attachment.type})</span>
+          <span class="attachment-name">${file.name}</span>
+          <span class="attachment-type">(${attachment.type})</span>
           <button type="button" class="remove-attachment-btn">&times;</button>
         </div>
         <input type="hidden" id="attachment-data" value='${JSON.stringify(
-          question.attachment
+          attachment
         )}'>
       `;
-      preview.classList.remove("hidden");
 
-      preview
-        .querySelector(".remove-attachment-btn")
-        .addEventListener("click", () => {
-          preview.innerHTML = "";
-          preview.classList.add("hidden");
-          document.getElementById("question-attachment").value = "";
-        });
-    }
+        preview
+          .querySelector(".remove-attachment-btn")
+          .addEventListener("click", () => {
+            preview.innerHTML = "";
+            preview.classList.add("hidden");
+            dialogOverlay.querySelector("#question-attachment").value = "";
+          });
+      } catch (error) {
+        console.error("Error uploading attachment:", error);
+        preview.innerHTML = `
+        <div class="attachment-error">
+          Failed to upload attachment: ${error.message}
+          <button type="button" class="retry-attachment-btn">Retry</button>
+        </div>
+      `;
+
+        preview
+          .querySelector(".retry-attachment-btn")
+          .addEventListener("click", () => {
+            dialogOverlay.querySelector("#question-attachment").click();
+          });
+      }
+    });
+
+  // Set up remove attachment button if it exists
+  const removeAttachmentBtn = dialogOverlay.querySelector(
+    ".remove-attachment-btn"
+  );
+  if (removeAttachmentBtn) {
+    removeAttachmentBtn.addEventListener("click", () => {
+      const preview = dialogOverlay.querySelector("#attachment-preview");
+      preview.innerHTML = "";
+      preview.classList.add("hidden");
+      dialogOverlay.querySelector("#question-attachment").value = "";
+    });
   }
 
-  // Show modal
-  modal.classList.remove("hidden");
-}
+  // Form submission
+  dialogOverlay
+    .querySelector("#question-form")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Saving...";
 
-/**
- * Closes the question modal
- */
-function closeQuestionModal() {
-  document.getElementById("question-modal").classList.add("hidden");
+      try {
+        // Get the examId from the hidden input field
+        const examId = form.querySelector("#exam-id").value;
+
+        if (!examId) {
+          throw new Error("Exam ID not found");
+        }
+
+        const questionData = getQuestionFormData(form, examId);
+        let result;
+
+        if (form.querySelector("#question-id").value) {
+          // Update existing question
+          const questionId = form.querySelector("#question-id").value;
+          result = await updateQuestion(questionId, questionData);
+          showNotification("Question updated successfully", "success");
+        } else {
+          // Create new question
+          result = await createQuestion(questionData);
+          showNotification("Question created successfully", "success");
+        }
+
+        // Close the dialog
+        document.body.removeChild(dialogOverlay);
+
+        // Refresh the exam view with the latest questions
+        await renderExamEditor(examId);
+      } catch (error) {
+        console.error("Error saving question:", error);
+        showNotification(`Failed to save question: ${error.message}`, "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Save Question";
+      }
+    });
+
+  console.log("Question dialog opened successfully");
 }
 
 /**
  * Gets the question data from the form
+ * @param {HTMLFormElement} form - The form element
  * @param {string} examId - The ID of the exam
  * @returns {Object} - The question data
  */
-function getQuestionFormData(examId) {
-  const form = document.getElementById("question-form");
+function getQuestionFormData(form, examId) {
   const type = form.querySelector("#question-type").value;
 
   const questionData = {
@@ -1014,9 +1016,9 @@ function getQuestionFormData(examId) {
   };
 
   // Handle attachment
-  const attachmentPreview = document.getElementById("attachment-preview");
+  const attachmentPreview = form.querySelector("#attachment-preview");
   if (!attachmentPreview.classList.contains("hidden")) {
-    const attachmentData = document.querySelector("#attachment-data");
+    const attachmentData = form.querySelector("#attachment-data");
     if (attachmentData) {
       questionData.attachment = JSON.parse(attachmentData.value);
     }
@@ -1032,7 +1034,7 @@ function getQuestionFormData(examId) {
     const options = [];
     const correctOptions = [];
 
-    document.querySelectorAll(".option-item").forEach((item, index) => {
+    form.querySelectorAll(".option-item").forEach((item, index) => {
       const optionText = item.querySelector(".option-input").value.trim();
       if (optionText) {
         options.push(optionText);
